@@ -10,6 +10,7 @@ export default function Dashboard() {
   const [appts, setAppts] = useState([])
   const [visits, setVisits] = useState([])
   const [employees, setEmployees] = useState([])
+  const [clients, setClients] = useState([])
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -54,6 +55,14 @@ export default function Dashboard() {
         else setVisits(data)
       })
 
+    supabase
+      .from('client')
+      .select('clientid,foundout')
+      .then(({ data, error }) => {
+        if (error) fail(error)
+        else setClients(data)
+      })
+
     // Only the admin may see employee.wage, so this query runs for admin only.
     if (caps.canSeeWages) {
       supabase
@@ -74,6 +83,11 @@ export default function Dashboard() {
     perCounselor[name] = (perCounselor[name] ?? 0) + 1
     const room = a.room?.roomname ?? `Room ${a.roomnumber}`
     perRoom[room] = (perRoom[room] ?? 0) + 1
+  }
+  const perSource = {}
+  for (const c of clients) {
+    const src = c.foundout ?? 'Unknown'
+    perSource[src] = (perSource[src] ?? 0) + 1
   }
   const marked = visits.filter((v) => v.kept !== null)
   const keptCount = marked.filter((v) => v.kept).length
@@ -138,6 +152,21 @@ export default function Dashboard() {
                   <tr key={name}>
                     <td>{name}</td>
                     <td>{n} appointments</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </section>
+        <section className="card">
+          <h3>How clients found RAFT</h3>
+          <table>
+            <tbody>
+              {Object.entries(perSource)
+                .sort((a, b) => b[1] - a[1])
+                .map(([name, n]) => (
+                  <tr key={name}>
+                    <td>{name}</td>
+                    <td>{n} clients</td>
                   </tr>
                 ))}
             </tbody>
